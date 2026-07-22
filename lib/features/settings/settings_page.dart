@@ -259,9 +259,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           ? Icons.check_circle
                           : Icons.cancel_outlined,
                       size: 18,
-                      color: session.connected
-                          ? scheme.primary
-                          : scheme.error,
+                      color: session.connected ? scheme.primary : scheme.error,
                     ),
                     label: Text(
                       session.connected
@@ -339,10 +337,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   ],
                   if (_error != null) ...[
                     const SizedBox(height: 12),
-                    Text(
-                      _error!,
-                      style: TextStyle(color: scheme.error),
-                    ),
+                    Text(_error!, style: TextStyle(color: scheme.error)),
                   ],
                 ],
               ),

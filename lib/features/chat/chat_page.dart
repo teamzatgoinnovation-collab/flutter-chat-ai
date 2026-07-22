@@ -7,6 +7,20 @@ import '../../models/chat_models.dart';
 import '../../services/session.dart';
 import '../../widgets/sign_out_action.dart';
 
+String formatChatError(Object error) {
+  final raw = error is ZatGoApiError ? error.message : error.toString();
+  final lower = raw.toLowerCase();
+  if (lower.contains('402') ||
+      lower.contains('credits') ||
+      lower.contains('max_tokens') ||
+      lower.contains('payment required')) {
+    return 'AI provider needs more credits or a lower token limit. '
+        'Try again, or ask an admin to top up OpenRouter / lower Max Tokens '
+        'in Chat AI Settings.';
+  }
+  return raw;
+}
+
 class ChatPage extends ConsumerStatefulWidget {
   const ChatPage({super.key});
 
@@ -75,7 +89,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = e.toString();
+        _error = formatChatError(e);
       });
     }
   }
@@ -98,7 +112,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = e.toString();
+        _error = formatChatError(e);
       });
     }
   }
@@ -122,7 +136,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = e.toString();
+        _error = formatChatError(e);
       });
     }
   }
@@ -179,7 +193,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       if (!mounted) return;
       setState(() {
         _sending = false;
-        _error = e is ZatGoApiError ? e.message : e.toString();
+        _error = formatChatError(e);
       });
     }
   }
@@ -262,7 +276,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       setState(() {});
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString());
+      setState(() => _error = formatChatError(e));
     }
   }
 
@@ -573,10 +587,7 @@ class _EmptyChat extends StatelessWidget {
               alignment: WrapAlignment.center,
               children: [
                 for (final s in suggestions)
-                  ActionChip(
-                    label: Text(s),
-                    onPressed: () => onSuggestion(s),
-                  ),
+                  ActionChip(label: Text(s), onPressed: () => onSuggestion(s)),
               ],
             ),
           ],

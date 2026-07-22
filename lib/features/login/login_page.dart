@@ -83,8 +83,16 @@ class _LoginPageState extends ConsumerState<LoginPage>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: isDark
-                ? [const Color(0xFF0F172A), scheme.primary.withValues(alpha: 0.22), const Color(0xFF0F172A)]
-                : [const Color(0xFFF0FDFA), scheme.primary.withValues(alpha: 0.12), const Color(0xFFF8FAFC)],
+                ? [
+                    const Color(0xFF0F172A),
+                    scheme.primary.withValues(alpha: 0.22),
+                    const Color(0xFF0F172A),
+                  ]
+                : [
+                    const Color(0xFFF0FDFA),
+                    scheme.primary.withValues(alpha: 0.12),
+                    const Color(0xFFF8FAFC),
+                  ],
           ),
         ),
         child: SafeArea(
@@ -142,10 +150,14 @@ class _LoginPageState extends ConsumerState<LoginPage>
                       const SizedBox(height: 28),
                       DecoratedBox(
                         decoration: BoxDecoration(
-                          color: scheme.surface.withValues(alpha: isDark ? 0.92 : 0.95),
+                          color: scheme.surface.withValues(
+                            alpha: isDark ? 0.92 : 0.95,
+                          ),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: scheme.outlineVariant.withValues(alpha: 0.55),
+                            color: scheme.outlineVariant.withValues(
+                              alpha: 0.55,
+                            ),
                           ),
                         ),
                         child: Padding(
@@ -225,8 +237,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                         if (!mounted) return;
                                         setState(() => _busy = false);
                                         if (!context.mounted) return;
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
                                           SnackBar(content: Text(r.message)),
                                         );
                                       },

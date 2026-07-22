@@ -25,7 +25,10 @@ class AppShell extends StatelessWidget {
         onDestinationSelected: _onTap,
         destinations: [
           NavigationDestination(
-            icon: Icon(Icons.chat_bubble_outline, color: scheme.onSurfaceVariant),
+            icon: Icon(
+              Icons.chat_bubble_outline,
+              color: scheme.onSurfaceVariant,
+            ),
             selectedIcon: Icon(Icons.chat_bubble, color: scheme.primary),
             label: 'Chat',
           ),
