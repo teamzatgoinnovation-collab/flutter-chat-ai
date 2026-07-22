@@ -102,10 +102,12 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       }
       _messages = await repo.history(session, active);
       _pending = repo.pendingConfirmation;
+      session.setContentReady(true);
       setState(() => _loading = false);
       _scrollToEnd();
     } catch (e) {
       if (!mounted) return;
+      session.setContentReady(false);
       setState(() {
         _loading = false;
         _error = formatChatError(e);
@@ -239,8 +241,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       final reply = result.content.trim().isNotEmpty
           ? result.content
           : (history.isNotEmpty && history.last.isAssistant
-              ? history.last.content
-              : '');
+                ? history.last.content
+                : '');
 
       // Hold off showing the final assistant turn until typewriter finishes.
       if (history.isNotEmpty && history.last.isAssistant && reply.isNotEmpty) {
@@ -568,9 +570,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                         (_streamText != null ? 1 : 0),
                     itemBuilder: (context, i) {
                       if (i < _messages.length) {
-                        return _centered(
-                          _MessageBubble(message: _messages[i]),
-                        );
+                        return _centered(_MessageBubble(message: _messages[i]));
                       }
                       var idx = i - _messages.length;
                       if (_sending && idx == 0) {
@@ -607,7 +607,10 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                 onCancel: () => setState(() => _pending = null),
               ),
             ),
-          Divider(height: 1, color: scheme.outlineVariant.withValues(alpha: 0.5)),
+          Divider(
+            height: 1,
+            color: scheme.outlineVariant.withValues(alpha: 0.5),
+          ),
           SafeArea(
             top: false,
             child: _centered(

@@ -21,6 +21,10 @@ class ChatAiSession extends ChangeNotifier {
   /// Active chat session name on the server (AI Chat Session).
   String? activeSessionName;
 
+  /// True after sessions/history have been fetched from the site.
+  /// UI loading flag only — must not gate the router (bootstrap runs on /chat).
+  bool contentReady = false;
+
   bool get connected => store.connected;
   bool get canEnterApp => connected;
 
@@ -34,10 +38,16 @@ class ChatAiSession extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setContentReady(bool value) {
+    contentReady = value;
+    notifyListeners();
+  }
+
   Future<ErpnextLoginResult> login({
     required String usr,
     required String pwd,
   }) async {
+    contentReady = false;
     final result = await store.login(baseUrl: baseUrl, usr: usr, pwd: pwd);
     if (result is ErpnextLoginOk) {
       user = result.session.user;
@@ -48,6 +58,7 @@ class ChatAiSession extends ChangeNotifier {
       user = null;
       fullName = null;
       lastError = result.message;
+      contentReady = false;
     }
     notifyListeners();
     return result;
@@ -59,6 +70,7 @@ class ChatAiSession extends ChangeNotifier {
     fullName = null;
     lastError = null;
     activeSessionName = null;
+    contentReady = false;
     notifyListeners();
   }
 
