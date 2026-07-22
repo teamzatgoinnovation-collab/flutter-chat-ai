@@ -58,7 +58,9 @@ class ChatAiApp extends ConsumerWidget {
     final router = ref.watch(_routerProvider);
     return MaterialApp.router(
       title: 'ZatGo Chat AI',
-      theme: buildChatAiTheme(),
+      theme: buildChatAiTheme(brightness: Brightness.light),
+      darkTheme: buildChatAiTheme(brightness: Brightness.dark),
+      themeMode: ThemeMode.system,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
     );

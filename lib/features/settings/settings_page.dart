@@ -22,11 +22,21 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   UiLocale? _locale;
   String? _language;
   String? _mode;
+  late final TextEditingController _baseUrl;
 
   @override
   void initState() {
     super.initState();
+    _baseUrl = TextEditingController(
+      text: ref.read(chatAiSessionProvider).baseUrl,
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadPrefs());
+  }
+
+  @override
+  void dispose() {
+    _baseUrl.dispose();
+    super.dispose();
   }
 
   Future<void> _loadPrefs() async {
@@ -77,11 +87,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       _error = null;
     });
     try {
-      await ref.read(chatAiRepoProvider).setLanguage(
-            session,
-            sessionName: active,
-            language: code,
-          );
+      await ref
+          .read(chatAiRepoProvider)
+          .setLanguage(session, sessionName: active, language: code);
       if (!mounted) return;
       setState(() {
         _language = code;
@@ -109,11 +117,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       _error = null;
     });
     try {
-      await ref.read(chatAiRepoProvider).setMode(
-            session,
-            sessionName: active,
-            assistantMode: mode,
-          );
+      await ref
+          .read(chatAiRepoProvider)
+          .setMode(session, sessionName: active, assistantMode: mode);
       if (!mounted) return;
       setState(() {
         _mode = mode;
@@ -133,20 +139,22 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Widget build(BuildContext context) {
     final session = ref.watch(chatAiSessionProvider);
     final theme = Theme.of(context);
-    final languages = _locale?.languages ??
+    final languages =
+        _locale?.languages ??
         const [
           UiLanguage(code: 'en', label: 'English'),
           UiLanguage(code: 'ar', label: 'Arabic'),
           UiLanguage(code: 'ml', label: 'Malayalam'),
         ];
 
+    final scheme = theme.colorScheme;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
         actions: const [SignOutAction()],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
           Text(
             'Chat preferences',
@@ -158,7 +166,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           Text(
             'Language and assistant mode apply to the active chat session.',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+              color: scheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 12),
@@ -215,14 +223,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     'LLM provider keys and site-wide Chat AI Settings are '
                     'configured in Desk (managers only).',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                      color: scheme.onSurfaceVariant,
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 28),
+          const Divider(),
+          const SizedBox(height: 12),
           Text(
             'Connection',
             style: theme.textTheme.titleMedium?.copyWith(
@@ -231,9 +241,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ),
           const SizedBox(height: 4),
           Text(
-            'ERPNext session via zatgo_core Chat AI APIs (DigitalOcean).',
+            'ERPNext session for chat_ai APIs.',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+              color: scheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 12),
@@ -243,35 +253,55 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    session.connected
-                        ? 'Signed in as ${session.fullName ?? session.user}'
-                        : 'Not signed in',
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    session.baseUrl,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                  Chip(
+                    avatar: Icon(
+                      session.connected
+                          ? Icons.check_circle
+                          : Icons.cancel_outlined,
+                      size: 18,
+                      color: session.connected
+                          ? scheme.primary
+                          : scheme.error,
                     ),
+                    label: Text(
+                      session.connected
+                          ? 'Signed in as ${session.fullName ?? session.user}'
+                          : 'Not signed in',
+                    ),
+                    backgroundColor: session.connected
+                        ? scheme.primary.withValues(alpha: 0.1)
+                        : scheme.errorContainer.withValues(alpha: 0.4),
+                    side: BorderSide.none,
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _baseUrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Site URL',
+                      prefixIcon: Icon(Icons.language_outlined),
+                    ),
+                    enabled: !session.connected,
+                    onChanged: (v) => session.updateBaseUrl(v),
                   ),
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      FilledButton(
+                      OutlinedButton(
                         onPressed: _busy
                             ? null
                             : () async {
+                                session.updateBaseUrl(_baseUrl.text.trim());
                                 setState(() => _busy = true);
-                                await session.logout();
+                                final r = await session.ping();
                                 if (!mounted) return;
-                                setState(() => _busy = false);
-                                if (!context.mounted) return;
-                                context.go('/login');
+                                setState(() {
+                                  _busy = false;
+                                  _lastProbe = r.message;
+                                });
                               },
-                        child: const Text('Sign out'),
+                        child: const Text('Test site'),
                       ),
                       OutlinedButton(
                         onPressed: _busy || !session.connected
@@ -311,16 +341,31 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     const SizedBox(height: 12),
                     Text(
                       _error!,
-                      style: TextStyle(color: theme.colorScheme.error),
+                      style: TextStyle(color: scheme.error),
                     ),
                   ],
                 ],
               ),
             ),
           ),
+          const SizedBox(height: 24),
+          TextButton(
+            onPressed: _busy
+                ? null
+                : () async {
+                    setState(() => _busy = true);
+                    await session.logout();
+                    if (!mounted) return;
+                    setState(() => _busy = false);
+                    if (!context.mounted) return;
+                    context.go('/login');
+                  },
+            style: TextButton.styleFrom(foregroundColor: scheme.error),
+            child: const Text('Sign out'),
+          ),
           if (_busy) ...[
             const SizedBox(height: 12),
-            const LinearProgressIndicator(),
+            const LinearProgressIndicator(minHeight: 2),
           ],
         ],
       ),

@@ -9,12 +9,13 @@ class SignOutAction extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return TextButton(
+    return IconButton(
+      tooltip: 'Sign out',
       onPressed: () async {
         await ref.read(chatAiSessionProvider).logout();
         if (context.mounted) context.go('/login');
       },
-      child: const Text('Sign out'),
+      icon: const Icon(Icons.logout_rounded),
     );
   }
 }

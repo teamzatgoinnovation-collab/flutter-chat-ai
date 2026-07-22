@@ -24,6 +24,13 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   List<ChatMessage> _messages = [];
   SendResult? _pending;
 
+  static const _suggestions = [
+    'What open sales orders do I have?',
+    'Summarize today’s receivables',
+    'List pending purchase invoices',
+    'Show stock shortages',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -137,7 +144,6 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     });
     if (confirmed == 0 && planConfirmed == 0) {
       _composer.clear();
-      // Optimistic user bubble
       setState(() {
         _messages = [
           ..._messages,
@@ -284,6 +290,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   Widget build(BuildContext context) {
     ref.watch(chatUiTickProvider);
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final active = ref.watch(chatAiSessionProvider).activeSessionName;
 
     return Scaffold(
@@ -314,9 +321,23 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
                 child: Row(
                   children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: scheme.primary.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.auto_awesome,
+                        color: scheme.primary,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         'Sessions',
@@ -325,7 +346,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                         ),
                       ),
                     ),
-                    IconButton(
+                    IconButton.filledTonal(
                       tooltip: 'New chat',
                       onPressed: () {
                         Navigator.pop(context);
@@ -338,30 +359,45 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               ),
               Expanded(
                 child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
                   itemCount: _sessions.length,
                   itemBuilder: (context, i) {
                     final s = _sessions[i];
                     final selected = s.name == active;
-                    return ListTile(
-                      selected: selected,
-                      leading: Icon(
-                        s.isPinned ? Icons.push_pin : Icons.chat_outlined,
-                        size: 20,
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: ListTile(
+                        selected: selected,
+                        selectedTileColor: scheme.primary.withValues(
+                          alpha: 0.12,
+                        ),
+                        leading: Icon(
+                          s.isPinned ? Icons.push_pin : Icons.chat_outlined,
+                          size: 20,
+                          color: selected
+                              ? scheme.primary
+                              : scheme.onSurfaceVariant,
+                        ),
+                        title: Text(
+                          s.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontWeight: selected
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                          ),
+                        ),
+                        subtitle: Text(
+                          s.assistantMode,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                          _selectSession(s.name);
+                        },
                       ),
-                      title: Text(
-                        s.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      subtitle: Text(
-                        s.assistantMode,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      onTap: () {
-                        Navigator.pop(context);
-                        _selectSession(s.name);
-                      },
                     );
                   },
                 ),
@@ -372,10 +408,10 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       ),
       body: Column(
         children: [
-          if (_loading) const LinearProgressIndicator(),
+          if (_loading) const LinearProgressIndicator(minHeight: 2),
           if (_error != null)
             Material(
-              color: theme.colorScheme.errorContainer,
+              color: scheme.errorContainer,
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Row(
@@ -383,9 +419,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                     Expanded(
                       child: Text(
                         _error!,
-                        style: TextStyle(
-                          color: theme.colorScheme.onErrorContainer,
-                        ),
+                        style: TextStyle(color: scheme.onErrorContainer),
                       ),
                     ),
                     IconButton(
@@ -398,21 +432,22 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             ),
           Expanded(
             child: _messages.isEmpty && !_loading
-                ? Center(
-                    child: Text(
-                      'Ask anything about your ERP.',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
+                ? _EmptyChat(
+                    onSuggestion: (text) {
+                      _composer.text = text;
+                      _send(message: text);
+                    },
+                    suggestions: _suggestions,
                   )
                 : ListView.builder(
                     controller: _scroll,
                     padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-                    itemCount: _messages.length,
+                    itemCount: _messages.length + (_sending ? 1 : 0),
                     itemBuilder: (context, i) {
-                      final m = _messages[i];
-                      return _MessageBubble(message: m);
+                      if (_sending && i == _messages.length) {
+                        return const _TypingRow();
+                      }
+                      return _MessageBubble(message: _messages[i]);
                     },
                   ),
           ),
@@ -430,7 +465,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           SafeArea(
             top: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -440,23 +475,138 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                       minLines: 1,
                       maxLines: 5,
                       enabled: !_sending,
-                      decoration: const InputDecoration(hintText: 'Message…'),
+                      decoration: InputDecoration(
+                        hintText: 'Message…',
+                        filled: true,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide(
+                            color: scheme.outlineVariant.withValues(alpha: 0.7),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide(
+                            color: scheme.primary,
+                            width: 1.5,
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 12,
+                        ),
+                      ),
                       onSubmitted: (_) => _sending ? null : _send(),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  FilledButton(
+                  IconButton.filled(
                     onPressed: _sending ? null : () => _send(),
-                    child: _sending
-                        ? const SizedBox(
+                    style: IconButton.styleFrom(
+                      minimumSize: const Size(48, 48),
+                    ),
+                    icon: _sending
+                        ? SizedBox(
                             width: 18,
                             height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: scheme.onPrimary,
+                            ),
                           )
-                        : const Icon(Icons.send),
+                        : const Icon(Icons.send_rounded),
                   ),
                 ],
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyChat extends StatelessWidget {
+  const _EmptyChat({required this.onSuggestion, required this.suggestions});
+
+  final ValueChanged<String> onSuggestion;
+  final List<String> suggestions;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.forum_outlined,
+              size: 48,
+              color: scheme.primary.withValues(alpha: 0.7),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Ask anything about your ERP',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Pick a suggestion or type your own message.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.center,
+              children: [
+                for (final s in suggestions)
+                  ActionChip(
+                    label: Text(s),
+                    onPressed: () => onSuggestion(s),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TypingRow extends StatelessWidget {
+  const _TypingRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 14,
+            backgroundColor: scheme.primary.withValues(alpha: 0.15),
+            child: Icon(Icons.auto_awesome, size: 14, color: scheme.primary),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            'Assistant is thinking…',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: scheme.onSurfaceVariant,
+              fontStyle: FontStyle.italic,
             ),
           ),
         ],
@@ -495,22 +645,53 @@ class _MessageBubble extends StatelessWidget {
       );
     }
 
+    final radius = BorderRadius.only(
+      topLeft: const Radius.circular(18),
+      topRight: const Radius.circular(18),
+      bottomLeft: Radius.circular(isUser ? 18 : 4),
+      bottomRight: Radius.circular(isUser ? 4 : 18),
+    );
+
     return Align(
       alignment: align,
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.sizeOf(context).width * 0.85,
+          maxWidth: MediaQuery.sizeOf(context).width * 0.78,
         ),
-        child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: SelectableText(
-            message.content,
-            style: theme.textTheme.bodyMedium?.copyWith(color: fg),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (!isUser) ...[
+                CircleAvatar(
+                  radius: 12,
+                  backgroundColor: theme.colorScheme.primary.withValues(
+                    alpha: 0.15,
+                  ),
+                  child: Icon(
+                    Icons.auto_awesome,
+                    size: 12,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(color: bg, borderRadius: radius),
+                  child: SelectableText(
+                    message.content,
+                    style: theme.textTheme.bodyMedium?.copyWith(color: fg),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -534,6 +715,7 @@ class _ConfirmationBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final label = pending.needsPlanApproval
         ? (pending.confirmationMessage.isNotEmpty
               ? pending.confirmationMessage
@@ -542,36 +724,40 @@ class _ConfirmationBar extends StatelessWidget {
               ? pending.confirmationMessage
               : 'Confirm this action?');
 
-    return Material(
-      color: theme.colorScheme.secondaryContainer,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              label,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSecondaryContainer,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      child: Material(
+        color: scheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                label,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: scheme.onSecondaryContainer,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                FilledButton(
-                  onPressed: busy ? null : onConfirm,
-                  child: Text(
-                    pending.needsPlanApproval ? 'Approve' : 'Confirm',
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  FilledButton(
+                    onPressed: busy ? null : onConfirm,
+                    child: Text(
+                      pending.needsPlanApproval ? 'Approve' : 'Confirm',
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                OutlinedButton(
-                  onPressed: busy ? null : onCancel,
-                  child: const Text('Cancel'),
-                ),
-              ],
-            ),
-          ],
+                  const SizedBox(width: 8),
+                  OutlinedButton(
+                    onPressed: busy ? null : onCancel,
+                    child: const Text('Cancel'),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

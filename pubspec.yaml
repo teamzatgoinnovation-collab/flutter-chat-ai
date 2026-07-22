@@ -12,6 +12,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_riverpod: ^2.6.1
   go_router: ^15.1.2
+  google_fonts: ^6.2.1
   http: ^1.6.0
   zatgo_dart_sdk:
     path: ../../../SharedSDK/dart_sdk
