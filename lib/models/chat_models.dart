@@ -137,7 +137,8 @@ class SendResult {
       confirmationMessage: data['confirmation_message']?.toString() ?? '',
       pendingTool: data['pending_tool']?.toString() ?? '',
       pendingArgs: args,
-      needsPlanApproval: data['needs_plan_approval'] == true ||
+      needsPlanApproval:
+          data['needs_plan_approval'] == true ||
           data['needs_plan_approval'] == 1,
       pendingPlan: data['pending_plan'] is List
           ? List<dynamic>.from(data['pending_plan'] as List)
@@ -151,10 +152,7 @@ class SendResult {
 }
 
 class UiLocale {
-  const UiLocale({
-    required this.language,
-    required this.languages,
-  });
+  const UiLocale({required this.language, required this.languages});
 
   final String language;
   final List<UiLanguage> languages;

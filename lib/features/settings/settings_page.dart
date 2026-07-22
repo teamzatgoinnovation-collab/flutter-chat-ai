@@ -22,21 +22,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   UiLocale? _locale;
   String? _language;
   String? _mode;
-  late final TextEditingController _baseUrl;
 
   @override
   void initState() {
     super.initState();
-    _baseUrl = TextEditingController(
-      text: ref.read(chatAiSessionProvider).baseUrl,
-    );
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadPrefs());
-  }
-
-  @override
-  void dispose() {
-    _baseUrl.dispose();
-    super.dispose();
   }
 
   Future<void> _loadPrefs() async {
@@ -241,7 +231,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ),
           const SizedBox(height: 4),
           Text(
-            'ERPNext session for chat_ai APIs.',
+            'ERPNext session via zatgo_core Chat AI APIs (DigitalOcean).',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -258,12 +248,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         ? 'Signed in as ${session.fullName ?? session.user}'
                         : 'Not signed in',
                   ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _baseUrl,
-                    decoration: const InputDecoration(labelText: 'Site URL'),
-                    enabled: !session.connected,
-                    onChanged: (v) => session.updateBaseUrl(v),
+                  const SizedBox(height: 4),
+                  Text(
+                    session.baseUrl,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Wrap(
@@ -282,21 +272,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                                 context.go('/login');
                               },
                         child: const Text('Sign out'),
-                      ),
-                      OutlinedButton(
-                        onPressed: _busy
-                            ? null
-                            : () async {
-                                session.updateBaseUrl(_baseUrl.text.trim());
-                                setState(() => _busy = true);
-                                final r = await session.ping();
-                                if (!mounted) return;
-                                setState(() {
-                                  _busy = false;
-                                  _lastProbe = r.message;
-                                });
-                              },
-                        child: const Text('Test site'),
                       ),
                       OutlinedButton(
                         onPressed: _busy || !session.connected

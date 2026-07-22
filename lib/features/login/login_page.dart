@@ -15,28 +15,17 @@ class LoginPage extends ConsumerStatefulWidget {
 class _LoginPageState extends ConsumerState<LoginPage> {
   final _usr = TextEditingController();
   final _pwd = TextEditingController();
-  late final TextEditingController _baseUrl;
   bool _busy = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _baseUrl = TextEditingController(
-      text: ref.read(chatAiSessionProvider).baseUrl,
-    );
-  }
 
   @override
   void dispose() {
     _usr.dispose();
     _pwd.dispose();
-    _baseUrl.dispose();
     super.dispose();
   }
 
   Future<void> _login() async {
     final session = ref.read(chatAiSessionProvider);
-    session.updateBaseUrl(_baseUrl.text.trim());
     setState(() => _busy = true);
     final result = await session.login(usr: _usr.text.trim(), pwd: _pwd.text);
     if (!mounted) return;
@@ -82,7 +71,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Talk to your ERP assistant. Sign in with ERPNext.',
+                  'Talk to your ERP assistant.',
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
@@ -90,22 +79,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 ),
                 const SizedBox(height: 24),
                 TextField(
-                  controller: _baseUrl,
-                  decoration: const InputDecoration(labelText: 'Site URL'),
-                  autocorrect: false,
-                  keyboardType: TextInputType.url,
-                ),
-                const SizedBox(height: 12),
-                TextField(
                   controller: _usr,
-                  decoration: const InputDecoration(labelText: 'Email / User'),
+                  decoration: const InputDecoration(labelText: 'Username'),
                   autocorrect: false,
+                  textInputAction: TextInputAction.next,
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: _pwd,
                   decoration: const InputDecoration(labelText: 'Password'),
                   obscureText: true,
+                  textInputAction: TextInputAction.done,
                   onSubmitted: (_) => _busy ? null : _login(),
                 ),
                 if (session.lastError != null) ...[
@@ -125,23 +109,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Text('Sign in'),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton(
-                  onPressed: _busy
-                      ? null
-                      : () async {
-                          session.updateBaseUrl(_baseUrl.text.trim());
-                          setState(() => _busy = true);
-                          final r = await session.ping();
-                          if (!mounted) return;
-                          setState(() => _busy = false);
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(
-                            context,
-                          ).showSnackBar(SnackBar(content: Text(r.message)));
-                        },
-                  child: const Text('Test site'),
                 ),
               ],
             ),

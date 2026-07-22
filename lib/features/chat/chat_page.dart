@@ -383,7 +383,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                     Expanded(
                       child: Text(
                         _error!,
-                        style: TextStyle(color: theme.colorScheme.onErrorContainer),
+                        style: TextStyle(
+                          color: theme.colorScheme.onErrorContainer,
+                        ),
                       ),
                     ),
                     IconButton(
@@ -438,9 +440,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                       minLines: 1,
                       maxLines: 5,
                       enabled: !_sending,
-                      decoration: const InputDecoration(
-                        hintText: 'Message…',
-                      ),
+                      decoration: const InputDecoration(hintText: 'Message…'),
                       onSubmitted: (_) => _sending ? null : _send(),
                     ),
                   ),
@@ -536,11 +536,11 @@ class _ConfirmationBar extends StatelessWidget {
     final theme = Theme.of(context);
     final label = pending.needsPlanApproval
         ? (pending.confirmationMessage.isNotEmpty
-            ? pending.confirmationMessage
-            : 'Approve this plan?')
+              ? pending.confirmationMessage
+              : 'Approve this plan?')
         : (pending.confirmationMessage.isNotEmpty
-            ? pending.confirmationMessage
-            : 'Confirm this action?');
+              ? pending.confirmationMessage
+              : 'Confirm this action?');
 
     return Material(
       color: theme.colorScheme.secondaryContainer,

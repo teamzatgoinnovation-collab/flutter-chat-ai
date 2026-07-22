@@ -6,14 +6,14 @@ class ChatAiSession extends ChangeNotifier {
   ChatAiSession() {
     final base = const String.fromEnvironment(
       'FRAPPE_BASE_URL',
-      defaultValue: 'https://demo.zatgo.online',
+      defaultValue: 'https://erp.zatgo.online',
     );
     baseUrl = base.replaceAll(RegExp(r'/$'), '');
   }
 
   final ErpnextSessionStore store = ErpnextSessionStore();
 
-  String baseUrl = 'https://demo.zatgo.online';
+  String baseUrl = 'https://erp.zatgo.online';
   String? user;
   String? fullName;
   String? lastError;

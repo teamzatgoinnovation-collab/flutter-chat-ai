@@ -1,8 +1,10 @@
 # Chat AI — Flutter client
 
-Mobile chat client for the Frappe **`chat_ai`** app. Tabs: **Chat** and **Settings**.
+Mobile chat client for **Chat AI** on DigitalOcean ERPNext (`https://erp.zatgo.online`).
 
-**Backend:** `chat_ai.api.chat.*`  
+Tabs: **Chat** and **Settings**.
+
+**Backend:** `zatgo_core.api.v1.chat_ai.*` (proxies `chat_ai`)  
 **SDK:** [`SharedSDK/dart_sdk`](../../../SharedSDK/dart_sdk/)  
 **Role:** Chat AI User (or Chat AI Manager / System Manager)
 
@@ -11,17 +13,17 @@ Mobile chat client for the Frappe **`chat_ai`** app. Tabs: **Chat** and **Settin
 ```bash
 cd Clients/flutter/chat_ai
 flutter pub get
-flutter run --dart-define=FRAPPE_BASE_URL=https://erp.zatgo.online
+flutter run
 ```
 
-Default site URL is `https://demo.zatgo.online` if `FRAPPE_BASE_URL` is omitted. Sign in with ERPNext email/password.
+Default site is `https://erp.zatgo.online` (override with `--dart-define=FRAPPE_BASE_URL=…` if needed). Sign in with username and password only.
 
 ## Features
 
 - Session list, new chat, history, send
 - Tool / plan confirmation resume
 - Rename, clear, archive, delete session
-- Settings: language, assistant mode, site ping, sign out
+- Settings: language, assistant mode, probe, sign out
 
 LLM provider keys stay in Desk → **Chat AI Settings** (managers only).
 
@@ -29,7 +31,7 @@ LLM provider keys stay in Desk → **Chat AI Settings** (managers only).
 
 | Action | Method |
 |--------|--------|
-| Send | `chat_ai.api.chat.send` |
+| Send | `zatgo_core.api.v1.chat_ai.chat.send` |
 | Sessions | `new_session`, `list_sessions`, `history` |
 | Prefs | `set_language`, `set_mode`, `get_ui_locale` |
 | Session ops | `rename`, `archive`, `delete_session`, `clear` |

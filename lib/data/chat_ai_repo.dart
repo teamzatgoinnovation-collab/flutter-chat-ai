@@ -76,7 +76,8 @@ class ChatAiRepo {
     final env = await session.store.callMethod(
       ZatGoApiMethods.chatAiSend,
       args: {
-        if (sessionName != null && sessionName.isNotEmpty) 'session': sessionName,
+        if (sessionName != null && sessionName.isNotEmpty)
+          'session': sessionName,
         'message': message,
         'confirmed': confirmed,
         'plan_confirmed': planConfirmed,
